@@ -7,6 +7,7 @@ const DEACTIVATED_TEXT = 'Forbidden: user is deactivated';
 const NO_CHAT = 'Bad Request: chat not found';
 const KICKED = 'Forbidden: bot was kicked from the group chat';
 const CHAT_UPGRADED = 'Bad Request: group chat was upgraded to a supergroup chat';
+const CHAT_DELETED = 'Forbidden: the group chat was deleted';
 
 enum Status {
   BLOCKED,
@@ -15,6 +16,7 @@ enum Status {
   NO_CHAT,
   KICKED,
   CHAT_UPGRADED,
+  CHAT_DELETED,
   OTHER,
 }
 
@@ -24,6 +26,7 @@ const MAP_STATUSES: Record<string, Status> = {
   [NO_CHAT]: Status.NO_CHAT,
   [KICKED]: Status.KICKED,
   [CHAT_UPGRADED]: Status.CHAT_UPGRADED,
+  [CHAT_DELETED]: Status.CHAT_DELETED,
 };
 
 const [, , botToken, dataPath] = process.argv;
@@ -51,6 +54,7 @@ const echo = () => {
   console.log('NO_CHAT: ', statusMap.get(Status.NO_CHAT) ?? 0);
   console.log('KICKED: ', statusMap.get(Status.KICKED) ?? 0);
   console.log('UPGRADED: ', statusMap.get(Status.CHAT_UPGRADED) ?? 0);
+  console.log('DELETED: ', statusMap.get(Status.CHAT_DELETED) ?? 0);
   console.log('OTHER: ', statusMap.get(Status.OTHER) ?? 0);
   console.log('TOTAL: ', resultMap.size, 'of', ids.length);
   console.log('\n');
@@ -80,7 +84,7 @@ const checkBlocked = async (id: number): Promise<void> => {
       console.log(id, description);
     }
   }
-  if (resultMap.size % 50 === 0) {
+  if (resultMap.size % 1000 === 0 || resultMap.size === ids.length) {
     echo();
   }
 };
