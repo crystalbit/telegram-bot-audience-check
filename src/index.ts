@@ -8,6 +8,13 @@ const NO_CHAT = 'Bad Request: chat not found';
 const KICKED = 'Forbidden: bot was kicked from the group chat';
 const CHAT_UPGRADED = 'Bad Request: group chat was upgraded to a supergroup chat';
 const CHAT_DELETED = 'Forbidden: the group chat was deleted';
+const CHAT_WRITE_FORBIDDEN = 'Bad Request: CHAT_WRITE_FORBIDDEN';
+const PEER_ID_INVALID = 'Bad Request: PEER_ID_INVALID';
+const NO_RIGHTS = 'Bad Request: have no rights to send a message';
+
+const ENOTFOUND = 'getaddrinfo ENOTFOUND api.telegram.org';
+
+const MAX_THREADS = 10;
 
 enum Status {
   BLOCKED,
@@ -17,6 +24,9 @@ enum Status {
   KICKED,
   CHAT_UPGRADED,
   CHAT_DELETED,
+  CHAT_WRITE_FORBIDDEN,
+  PEER_ID_INVALID,
+  NO_RIGHTS,
   OTHER,
 }
 
@@ -26,17 +36,22 @@ const MAP_STATUSES: Record<string, Status> = {
   [NO_CHAT]: Status.NO_CHAT,
   [KICKED]: Status.KICKED,
   [CHAT_UPGRADED]: Status.CHAT_UPGRADED,
+  [CHAT_WRITE_FORBIDDEN]: Status.CHAT_WRITE_FORBIDDEN,
+  [PEER_ID_INVALID]: Status.PEER_ID_INVALID,
+  [NO_RIGHTS]: Status.NO_RIGHTS,
   [CHAT_DELETED]: Status.CHAT_DELETED,
 };
 
 const [, , botToken, dataPath] = process.argv;
 const fileName = path.resolve(__dirname, `data-${dataPath}.json`);
 const data = fs.readFileSync(fileName, 'utf-8');
-const ids: number[] = JSON.parse(data).map((idNode: number | { id: number }) => {
+const ids: number[] = JSON.parse(data).map((idNode: number | { id: number | { '$numberLong': string } }) => {
   if (typeof idNode === 'number') {
     return idNode;
   } else {
-    return idNode.id;
+    return typeof idNode.id === 'number'
+      ? idNode.id
+      : parseInt(idNode.id.$numberLong); // some data from mongoDb export may be like `{ '$numberLong': '-10015516.....' }`
   }
 });
 
@@ -44,8 +59,6 @@ type StatedPromise = Promise<void> & { done?: boolean };
 
 const resultMap: Map<number, Status> = new Map();
 const statusMap: Map<Status, number> = new Map();
-
-const MAX_THREADS = 10;
 
 const echo = () => {
   console.log('OK: ', statusMap.get(Status.OK) ?? 0);
@@ -55,6 +68,9 @@ const echo = () => {
   console.log('KICKED: ', statusMap.get(Status.KICKED) ?? 0);
   console.log('UPGRADED: ', statusMap.get(Status.CHAT_UPGRADED) ?? 0);
   console.log('DELETED: ', statusMap.get(Status.CHAT_DELETED) ?? 0);
+  console.log('WRITE_FORBIDDEN: ', statusMap.get(Status.CHAT_WRITE_FORBIDDEN) ?? 0);
+  console.log('PEER_ID_INVALID: ', statusMap.get(Status.PEER_ID_INVALID) ?? 0);
+  console.log('NO_RIGHTS: ', statusMap.get(Status.NO_RIGHTS) ?? 0);
   console.log('OTHER: ', statusMap.get(Status.OTHER) ?? 0);
   console.log('TOTAL: ', resultMap.size, 'of', ids.length);
   console.log('\n');
@@ -76,12 +92,21 @@ const checkBlocked = async (id: number): Promise<void> => {
       console.log(id, ok, result);
     }
   } catch (error: any) {
-    const { description } = error.response.data;
-    const status = MAP_STATUSES[description] ?? Status.OTHER;
-    set(id, status);
+    if (!error.response) {
+      if (error.message === ENOTFOUND) {
+        await new Promise((rs) => setTimeout(rs, 300 + Math.random() * 300));
+        return checkBlocked(id);
+      } else {
+        console.log('!!!', id, error.message);
+      }
+    } else {
+      const { description } = error.response.data;
+      const status = MAP_STATUSES[description] ?? Status.OTHER;
+      set(id, status);
 
-    if (status === Status.OTHER) {
-      console.log(id, description);
+      if (status === Status.OTHER) {
+        console.log(id, description);
+      }
     }
   }
   if (resultMap.size % 1000 === 0 || resultMap.size === ids.length) {
@@ -92,7 +117,12 @@ const checkBlocked = async (id: number): Promise<void> => {
 const promises: Array<StatedPromise> = [];
 
 const main = async () => {
+  let counter = 0;
   for (const id of ids) {
+    counter++;
+    if (counter < 46000) {
+      continue;
+    }
     const promise: StatedPromise = checkBlocked(id);
     promise.then(() => {
       promise.done = true;
@@ -106,7 +136,6 @@ const main = async () => {
         }
       }
     }
-    await new Promise(rs => setTimeout(rs, 1));
   }
 };
 
