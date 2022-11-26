@@ -116,12 +116,16 @@ const checkBlocked = async (id: number): Promise<void> => {
 
 const promises: Array<StatedPromise> = [];
 
+const START_FROM = 0;
+
 const main = async () => {
   let counter = 0;
   for (const id of ids) {
-    counter++;
-    if (counter < 46000) {
+    if (counter < START_FROM) {
+      counter++;
       continue;
+    } else {
+      counter++;
     }
     const promise: StatedPromise = checkBlocked(id);
     promise.then(() => {
