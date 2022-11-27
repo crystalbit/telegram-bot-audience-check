@@ -11,10 +11,13 @@ const CHAT_DELETED = 'Forbidden: the group chat was deleted';
 const CHAT_WRITE_FORBIDDEN = 'Bad Request: CHAT_WRITE_FORBIDDEN';
 const PEER_ID_INVALID = 'Bad Request: PEER_ID_INVALID';
 const NO_RIGHTS = 'Bad Request: have no rights to send a message';
+const SG_NO_MEMBER = 'Forbidden: bot is not a member of the supergroup chat';
+const SG_KICKED = 'Forbidden: bot was kicked from the supergroup chat';
+const CHANNEL_PRIVATE = 'Bad Request: CHANNEL_PRIVATE';
 
 const ENOTFOUND = 'getaddrinfo ENOTFOUND api.telegram.org';
 
-const MAX_THREADS = 10;
+const MAX_THREADS = 7;
 
 enum Status {
   BLOCKED,
@@ -27,6 +30,9 @@ enum Status {
   CHAT_WRITE_FORBIDDEN,
   PEER_ID_INVALID,
   NO_RIGHTS,
+  SG_NO_MEMBER,
+  SG_KICKED,
+  CHANNEL_PRIVATE,
   OTHER,
 }
 
@@ -39,6 +45,9 @@ const MAP_STATUSES: Record<string, Status> = {
   [CHAT_WRITE_FORBIDDEN]: Status.CHAT_WRITE_FORBIDDEN,
   [PEER_ID_INVALID]: Status.PEER_ID_INVALID,
   [NO_RIGHTS]: Status.NO_RIGHTS,
+  [SG_NO_MEMBER]: Status.SG_NO_MEMBER,
+  [SG_KICKED]: Status.SG_KICKED,
+  [CHANNEL_PRIVATE]: Status.CHANNEL_PRIVATE,
   [CHAT_DELETED]: Status.CHAT_DELETED,
 };
 
@@ -65,12 +74,14 @@ const echo = () => {
   console.log('BLOCKED: ', statusMap.get(Status.BLOCKED) ?? 0);
   console.log('DEACTIVATED: ', statusMap.get(Status.DEACTIVATED) ?? 0);
   console.log('NO_CHAT: ', statusMap.get(Status.NO_CHAT) ?? 0);
-  console.log('KICKED: ', statusMap.get(Status.KICKED) ?? 0);
+  console.log('KICKED: ', (statusMap.get(Status.KICKED) ?? 0) + (statusMap.get(Status.SG_KICKED) ?? 0));
   console.log('UPGRADED: ', statusMap.get(Status.CHAT_UPGRADED) ?? 0);
   console.log('DELETED: ', statusMap.get(Status.CHAT_DELETED) ?? 0);
   console.log('WRITE_FORBIDDEN: ', statusMap.get(Status.CHAT_WRITE_FORBIDDEN) ?? 0);
   console.log('PEER_ID_INVALID: ', statusMap.get(Status.PEER_ID_INVALID) ?? 0);
   console.log('NO_RIGHTS: ', statusMap.get(Status.NO_RIGHTS) ?? 0);
+  console.log('SG_NO_MEMBER: ', statusMap.get(Status.SG_NO_MEMBER) ?? 0);
+  console.log('CHANNEL_PRIVATE: ', statusMap.get(Status.CHANNEL_PRIVATE) ?? 0);
   console.log('OTHER: ', statusMap.get(Status.OTHER) ?? 0);
   console.log('TOTAL: ', resultMap.size, 'of', ids.length);
   console.log('\n');
