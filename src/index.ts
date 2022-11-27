@@ -17,7 +17,12 @@ const CHANNEL_PRIVATE = 'Bad Request: CHANNEL_PRIVATE';
 
 const ENOTFOUND = 'getaddrinfo ENOTFOUND api.telegram.org';
 
-const MAX_THREADS = 7;
+const MAX_THREADS = 20;
+
+const FG_BG_RESET = '\x1b[0m';
+const BG_BLUE_FG_YELLOW = '\x1b[44m\x1b[33m';
+
+const errorLog: string[] = [];
 
 enum Status {
   BLOCKED,
@@ -70,21 +75,36 @@ const resultMap: Map<number, Status> = new Map();
 const statusMap: Map<Status, number> = new Map();
 
 const echo = () => {
-  console.log('OK: ', statusMap.get(Status.OK) ?? 0);
-  console.log('BLOCKED: ', statusMap.get(Status.BLOCKED) ?? 0);
-  console.log('DEACTIVATED: ', statusMap.get(Status.DEACTIVATED) ?? 0);
-  console.log('NO_CHAT: ', statusMap.get(Status.NO_CHAT) ?? 0);
-  console.log('KICKED: ', (statusMap.get(Status.KICKED) ?? 0) + (statusMap.get(Status.SG_KICKED) ?? 0));
-  console.log('UPGRADED: ', statusMap.get(Status.CHAT_UPGRADED) ?? 0);
-  console.log('DELETED: ', statusMap.get(Status.CHAT_DELETED) ?? 0);
-  console.log('WRITE_FORBIDDEN: ', statusMap.get(Status.CHAT_WRITE_FORBIDDEN) ?? 0);
-  console.log('PEER_ID_INVALID: ', statusMap.get(Status.PEER_ID_INVALID) ?? 0);
-  console.log('NO_RIGHTS: ', statusMap.get(Status.NO_RIGHTS) ?? 0);
-  console.log('SG_NO_MEMBER: ', statusMap.get(Status.SG_NO_MEMBER) ?? 0);
-  console.log('CHANNEL_PRIVATE: ', statusMap.get(Status.CHANNEL_PRIVATE) ?? 0);
-  console.log('OTHER: ', statusMap.get(Status.OTHER) ?? 0);
-  console.log('TOTAL: ', resultMap.size, 'of', ids.length);
-  console.log('\n');
+  console.clear();
+  const lines = `OK: ${statusMap.get(Status.OK) ?? 0}
+                 BLOCKED: ${statusMap.get(Status.BLOCKED) ?? 0}
+                 DEACTIVATED: ${statusMap.get(Status.DEACTIVATED) ?? 0}
+                 NO_CHAT: ${statusMap.get(Status.NO_CHAT) ?? 0}
+                 KICKED: ${(statusMap.get(Status.KICKED) ?? 0) + (statusMap.get(Status.SG_KICKED) ?? 0)}
+                 UPGRADED: ${statusMap.get(Status.CHAT_UPGRADED) ?? 0}
+                 DELETED: ${statusMap.get(Status.CHAT_DELETED) ?? 0}
+                 WRITE_FORBIDDEN: ${statusMap.get(Status.CHAT_WRITE_FORBIDDEN) ?? 0}
+                 PEER_ID_INVALID: ${statusMap.get(Status.PEER_ID_INVALID) ?? 0}
+                 NO_RIGHTS: ${statusMap.get(Status.NO_RIGHTS) ?? 0}
+                 SG_NO_MEMBER: ${statusMap.get(Status.SG_NO_MEMBER) ?? 0}
+                 CHANNEL_PRIVATE: ${statusMap.get(Status.CHANNEL_PRIVATE) ?? 0}
+                 OTHER: ${statusMap.get(Status.OTHER) ?? 0}
+                 TOTAL: ${resultMap.size} of ${ids.length} (${(100 * resultMap.size / ids.length).toFixed()}%)
+
+                 ${errorLog.join('\n')}
+                 `.split('\n');
+
+  const data = lines.map((line) => {
+    const trimmed = line.trimStart();
+    if (trimmed.includes(':')) {
+      return trimmed.substring(0, trimmed.indexOf(':') + 1).padEnd(20)
+             + BG_BLUE_FG_YELLOW
+             + trimmed.substring(trimmed.indexOf(':') + 1)
+             + ' ' + FG_BG_RESET;
+    }
+    return line;
+  }).join('\n');
+  console.log(data);
 };
 
 const set = (id: number, status: Status) => {
@@ -108,7 +128,10 @@ const checkBlocked = async (id: number): Promise<void> => {
         await new Promise((rs) => setTimeout(rs, 300 + Math.random() * 300));
         return checkBlocked(id);
       } else {
-        console.log('!!!', id, error.message);
+        errorLog.push(`${id} ${error.message}`);
+        if (errorLog.length > 10) {
+          errorLog.shift();
+        }
       }
     } else {
       const { description } = error.response.data;
@@ -120,7 +143,7 @@ const checkBlocked = async (id: number): Promise<void> => {
       }
     }
   }
-  if (resultMap.size % 1000 === 0 || resultMap.size === ids.length) {
+  if (resultMap.size % 10 === 0 || resultMap.size === ids.length) {
     echo();
   }
 };
