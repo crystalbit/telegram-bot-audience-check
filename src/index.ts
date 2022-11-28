@@ -57,17 +57,26 @@ const MAP_STATUSES: Record<string, Status> = {
 };
 
 const [, , botToken, dataPath] = process.argv;
-const fileName = path.resolve(__dirname, `data-${dataPath}.json`);
+const fileName = path.resolve(__dirname, dataPath);
 const data = fs.readFileSync(fileName, 'utf-8');
-const ids: number[] = JSON.parse(data).map((idNode: number | { id: number | { '$numberLong': string } }) => {
-  if (typeof idNode === 'number') {
-    return idNode;
-  } else {
-    return typeof idNode.id === 'number'
-      ? idNode.id
-      : parseInt(idNode.id.$numberLong); // some data from mongoDb export may be like `{ '$numberLong': '-10015516.....' }`
-  }
-});
+let ids: number[];
+if (dataPath.endsWith('.json')) {
+  ids = JSON.parse(data).map((idNode: number | { id: number | { '$numberLong': string } }) => {
+    if (typeof idNode === 'number') {
+      return idNode;
+    } else {
+      return typeof idNode.id === 'number'
+        ? idNode.id
+        : parseInt(idNode.id.$numberLong); // some data from mongoDb export may be like `{ '$numberLong': '-10015516.....' }`
+    }
+  });
+} else if (dataPath.endsWith('.txt')) {
+  ids = data.split('\n').filter((it) => Boolean(it)).map((it) => parseInt(it));
+} else {
+  console.error('Wrong data');
+  process.exit();
+}
+
 
 type StatedPromise = Promise<void> & { done?: boolean };
 

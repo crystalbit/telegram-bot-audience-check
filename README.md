@@ -6,12 +6,19 @@ Uses sending typing action and checking for errors method
 
 # Howto
 
-Just run `npx telegram-bot-audience-check BOT_TOKEN SOURCE`,
+Just run `npx telegram-bot-audience-check BOT_TOKEN data-test.json`,
 
 where BOT_TOKEN is a bot token (like `5432947618:AAHg2R7rkaUoMv8zf9YcShGVf9R12goRx8k` or something)
-and `SOURCE` is a part of filename with ids
+and `data-test.json` is a file with ids
 
-Files with ids should be placed in `src` folder with names like `data-something.json`. In this case SOURCE is `something`. `data-*.json` files are gitignored.
+Files can be both json and txt. `data-*.json` files are gitignored.
+
+Txt data should be a \n-separated list of ids like
+```
+23
+34
+456
+```
 
 Data json should be an array with any of following styles:
 ```
@@ -27,6 +34,5 @@ Data json should be an array with any of following styles:
 
 The purpose was to proceed mongodb export files
 
-TODO: make simple \n-lists work too  
 TODO: handle time limits (goes to OTHER now)  
 TODO: store resulting datasets, not only to show statistics  
