@@ -1,8 +1,11 @@
 {
   "name": "telegram-bot-audience-check",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Audience checker for telegram bots",
   "main": "dist/index.js",
+  "bin": {
+    "telegram-bot-audience-check": "dist/index.js"
+  },
   "scripts": {
     "start": "ts-node src/index.ts",
     "build": "tsc src/index.ts --outDir dist",
