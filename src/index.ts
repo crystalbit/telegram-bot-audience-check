@@ -2,7 +2,6 @@
 
 import axios from 'axios';
 import * as fs from 'fs';
-import * as path from 'path';
 
 const BLOCKED_TEXT = 'Forbidden: bot was blocked by the user';
 const DEACTIVATED_TEXT = 'Forbidden: user is deactivated';
@@ -58,11 +57,10 @@ const MAP_STATUSES: Record<string, Status> = {
   [CHAT_DELETED]: Status.CHAT_DELETED,
 };
 
-const [, , botToken, dataPath] = process.argv;
-const fileName = path.resolve(__dirname, dataPath);
+const [, , botToken, fileName] = process.argv;
 const data = fs.readFileSync(fileName, 'utf-8');
 let ids: number[];
-if (dataPath.endsWith('.json')) {
+if (fileName.endsWith('.json')) {
   ids = JSON.parse(data).map((idNode: number | { id: number | { '$numberLong': string } }) => {
     if (typeof idNode === 'number') {
       return idNode;
@@ -72,7 +70,7 @@ if (dataPath.endsWith('.json')) {
         : parseInt(idNode.id.$numberLong); // some data from mongoDb export may be like `{ '$numberLong': '-10015516.....' }`
     }
   });
-} else if (dataPath.endsWith('.txt')) {
+} else if (fileName.endsWith('.txt')) {
   ids = data.split('\n').filter((it) => Boolean(it)).map((it) => parseInt(it));
 } else {
   console.error('Wrong data');
